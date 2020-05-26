@@ -1,0 +1,450 @@
+<div class="article">
+    <div class="article-option">
+        <div class="btn-left">
+            <button class="btn btn-primary" id="addBtn">新增</button>
+            <button class="btn btn-danger" id="batchDelete">批量删除</button>
+        </div>
+        <div class="btn-right">
+            <span>请选择日期：</span>
+            <input type="text" id="beginTime" class="form-control" placeholder="起始日期">
+            ~
+            <input type="text" id="endTime" class="form-control" placeholder="结束日期">
+            <input type="text" id="keyWords" class="form-control" placeholder="标题关键字">
+            <button class="btn btn-primary" id="searchBtn">搜索</button>
+            <button class="btn btn-info" id="resetBtn">重置</button>
+        </div>
+    </div>
+    <!-- 内容 -->
+    <div>
+        <!-- 展示数据 -->
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>编号</th>
+                    <th>文章标题</th>
+                    <th>所属栏目</th>
+                    <th>作者</th>
+                    <th>发布时间</th>
+                    <th>阅读次数</th>
+                    <th>文章封面</th>
+                    <th>状态</th>
+                    <th style="text-align: center;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            </tbody>
+        </table>
+        <!-- 分页 -->
+        <div id="articlePage"></div>
+    </div>
+
+    
+    <!-- 发布文章模态框 -->
+    <div class="modal fade" id="articleModal" tabindex="-1" role="dialog" aria-labelledby="articleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="articleModalLabel">发布文章</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                      <label for="article-title">文章标题</label>
+                      <input type="email" class="form-control" id="article-title" aria-describedby="emailHelp">
+                    </div>
+                    <div class="form-group">
+                      <label for="article-category">所属栏目</label>
+                      <select name="" id="article-category" class="form-control">    
+                      </select>
+                    </div> 
+                    <div class="form-group">
+                        <label for="">列表样式</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="radio" name="listStyle" id="listOne" value="style-one" checked>
+                                <label for="listOne" style="border: 1px solid #333;padding: 5px;width: 200px;height: 80px;">
+                                    <div>文本内容</div>
+                                    <div><img style="width: 40px;" src="../images/2.jpg" alt=""></div>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <input type="radio" name="listStyle" id="listTwo" value="style-two">
+                                <label for="listTwo" style="border: 1px solid #333;padding: 5px;width: 200px;height: 80px;line-height: 80px;">
+                                    <div style="display: inline-block;">文本内容</div>
+                                    <div style="display: inline-block;"><img style="width: 40px;height: 40px;" src="../images/2.jpg" alt=""></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>文章封面</label>
+                        <!-- 保存的图片id 用于表单提交 -->
+                        <input type="hidden" id="imagepath" name="">
+                        <!-- 上传按钮 -->
+                        <span id="uploadImage" class="btn btn-primary">上传</span>
+                        <!-- 输出图片 -->
+                        <div class="show"></div> 
+                    </div>
+                    <div class="form-group">
+                        <label>正文</label>
+                        <!-- 富文本编辑器 -->
+                        <div id="editor"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveBtn">确定</button>
+            </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- 显示大图模态框 -->
+        <div class="modal fade" id="bigImgModal" tabindex="-1" role="dialog" aria-labelledby="bigImgModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <img  id="bigImg" src="" style="height: 500px;">
+                </div>
+            </div>
+        </div>
+
+</div>
+<script>
+    var allData = null;
+    var fileUrl = 'http://120.24.21.21:8888/'; //文件服务器地址
+    findAllArticle(1);
+    function findAllArticle(page){
+        jqxhr = myAjax('/manager/article/findArticleByCondition','get',{page:page,pageSize:5},function(res){
+            allData = res;
+            $('tbody').empty();
+            res.data.records.forEach(function(item){
+                var newTr = $(`
+                    <tr>
+                        <td><input type="checkbox" value="`+item.article.id+`"></td>
+                        <td>`+item.article.title+`</td>
+                        <td>`+(item.category ? item.category.name : '')+`</td>
+                        <td>`+(item.author ? item.author.username : '')+`</td>
+                        <td>`+item.article.publishtime+`</td>
+                        <td>`+item.article.readtimes+`</td>
+                        <td style="text-align:center;"><img class="articleImg" src="`+(item.article.source?fileUrl+item.article.source:"没有封面")+`"/></td>
+                        <td style="text-align:center;">`+(item.article.status=="未审核"?"<button class='passBtn'>审核</button>":item.article.status)+`</td>
+                        <td style="text-align:center;">
+                            <span><i class="iconfont icon-shanchu article-delete" title="删除"></i></span>
+                            <span><i class="iconfont icon-xiugai article-edit" title="修改"></i></span>
+                        </td>
+                    </tr>
+                `)
+                $('tbody').append(newTr);
+            })
+            $("#articlePage").sPage({
+                page:res.data.current,
+                pageSize:res.data.size,
+                total:res.data.total,
+                prevPage:"←",
+                nextPage:"→",
+                backFun:function(page){
+                    findAllArticle(page);
+                }
+            });
+        });
+    }
+
+    $("#beginTime").fdatepicker();
+    $("#endTime").fdatepicker();
+
+    // 搜索
+    var curPage;
+    var flag = true; //标识当前点击的是否是搜索按钮 
+    $('#searchBtn').click(function(){
+        $('tbody').empty();
+        var beginTime = $('#beginTime').val();
+        var endTime = $('#endTime').val();
+        var keywords = $('#keyWords').val();
+        if(flag){
+            curPage=1;
+        }
+        jqxhr = myAjax('/manager/article/findArticleByCondition','get',{
+            page:curPage,
+            pageSize:5,
+            startTime:beginTime,
+            endTime:endTime,
+            title:keywords
+        },function(res){
+            allData = res;
+            res.data.records.forEach(function(item){
+                var newTr = $(`
+                    <tr>
+                        <td><input type="checkbox" value="`+item.article.id+`"></td>
+                        <td>`+item.article.title+`</td>
+                        <td>`+(item.category ? item.category.name : '--')+`</td>
+                        <td>`+(item.author ? item.author.username : '')+`</td>
+                        <td>`+item.article.publishtime+`</td>
+                        <td>`+item.article.readtimes+`</td>
+                        <td style="text-align:center;"><img class="articleImg" src="`+(item.article.source?fileUrl+item.article.source:"没有封面")+`"/></td>
+                        <td style="text-align:center;">`+(item.article.status=="未审核"?"<button class='passBtn '>审核</button>":item.article.status)+`</td>
+                        <td style="text-align:center;">
+                            <span><i class="iconfont icon-shanchu article-delete" title="删除"></i></span>
+                            <span><i class="iconfont icon-xiugai article-edit" title="修改"></i></span>
+                        </td>
+                    </tr>
+                `)
+                $('tbody').append(newTr);
+            })
+            flag = true;
+            $("#articlePage").sPage({
+                page:res.data.current,
+                pageSize:res.data.size,
+                total:res.data.total,
+                prevPage:"←",
+                nextPage:"→",
+                backFun:function(page){
+                    curPage = page;
+                    flag = false;
+                    $("#searchBtn").trigger("click");
+                }
+            });
+        });
+    });
+
+    //鼠标悬浮显示大图
+    $(".table").on('click','.articleImg',function(){
+        var imgSource = $(this).closest('tr').find(".articleImg").attr("src");
+        $("#bigImgModal").modal("show");
+        $("#bigImg").attr("src",imgSource);
+    });
+
+    // 重置
+    $('#resetBtn').click(function(){
+        // 清空搜索框的值
+        var beginTime = $('#beginTime').val('');
+        var endTime = $('#endTime').val('');
+        var keywords = $('#keyWords').val('');
+        findAllArticle(1);
+    });
+
+    // 审核
+    $('.table').on('click','.passBtn',function(){
+        // 获取当前点击的文章id
+        var id = $(this).closest('tr').find('[type=checkbox]').val();
+        jqxhr = myAjax('/manager/article/checkArticle','put',{
+            id:id
+        },function(res){
+            if(res.status == 2000){
+                alert("审核成功！")
+                // 更新数据
+                findAllArticle(1);
+            } else {
+                alert('审核失败！');
+            }
+        })
+    })
+
+
+    //富文本编辑器
+    var E = window.wangEditor;
+    var editor = new E('#editor');
+    //创建编辑器
+    editor.create();
+
+    // 查询所有栏目
+    findAllCategory();
+    function findAllCategory(){
+        jqxhr = myAjax('/manager/category/findAllCategory','get',{},function(res){
+            // 将数据遍历到下拉框中去
+            res.data.forEach(function(item){
+                var newOption = $(`
+                    <option value="`+item.category.id+`">`+item.category.name+`</option>
+                `)
+                $('#article-category').append(newOption);
+            })
+        })
+    }
+
+    //文件上传
+    var imgUrl; //文件路径
+    a = $("#uploadImage").FraUpload({
+        view        : ".show",      // 视图输出位置
+        url         : "http://120.24.21.21:8081/manager/file/upload", // 上传接口
+        fetch       : "img",   // 视图现在只支持img
+        debug       : false,    // 是否开启调试模式
+        /* 外部获得的回调接口 */
+        onLoad: function(e){                    // 选择文件的回调方法
+            console.log("外部: 初始化完成...");
+        },
+        breforePort: function (e) {         // 发送前触发
+            console.log("文件发送之前触发");
+        },  
+        successPort: function (e) {         // 发送成功触发
+            console.log("文件发送成功");
+            onload_image()
+        },
+        errorPort: function (e) {       // 发送失败触发
+            console.log("文件发送失败");
+            onload_image()
+        },
+        deletePost: function(e){    // 删除文件触发
+            console.log("删除文件");
+            console.log(e);
+            alert('删除了'+e.filename)
+            onload_image()
+        },
+        sort: function(e){      // 排序触发
+            console.log("排序");
+            onload_image()
+        }
+    });
+    // 获取图片上传信息
+    function onload_image(){
+        var res = a.FraUpload.show()
+        var ids = [];
+        for(let k in res){
+            this_val = res[k]
+            if(!empty(res[k]['is_upload']) && !empty(res[k]['ajax'])){
+                ajax_value = res[k]['ajax'];
+                ids.push(ajax_value.data.id)
+            }
+        }
+        $("#imagepath").val(ids);
+        imgUrl = res[0].ajax.data.id;
+    }
+    /**
+     * 判断变量是否为空
+     */
+    function empty(value) {
+        if(value=="" || value==undefined || value==null || value==false || value==[] || value=={}){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    var id = null;
+    var publishtime = null;
+    var readtimes = null;
+    // 保存
+     $('#saveBtn').click(function(){
+        var title = $('#article-title').val();
+        var liststyle =$('[type=radio]:checked').val() ;
+        var categoryId = $('#article-category').val();
+        var content = $('.w-e-text').html();
+        var obj = null;
+        if(id){
+            obj = {
+                id:id,
+                title:title,
+                liststyle:liststyle,
+                userId:7,
+                categoryId:categoryId,
+                content:content,
+                source:imgUrl,
+                status:"未审核",
+                publishtime:publishtime,
+                readtimes:(readtimes?readtimes:0)
+            }
+                    
+            // 发送请求
+            jqxhr = myAjaxJson('/manager/article/updateArticle','put',JSON.stringify(obj),function(res){
+                $('#articleModal').modal('hide');
+                if(res.status==2000){
+                    alert(res.msg);
+                    findAllArticle(1);
+                }else{
+                    alert("修改失败！");
+                }
+                id=null;
+            });
+        }else{
+            obj = {
+                title:title,
+                lisstyle:liststyle,
+                userId:7,
+                categoryId:categoryId,
+                content:content,
+                source:imgUrl,
+                readtimes:0
+            }
+            // 发送请求           
+            jqxhr = myAjaxJson('/manager/article/saveArticle','post',JSON.stringify(obj),function(res){
+                $('#articleModal').modal('hide');
+                if(res.status==2000){
+                    alert(res.msg);
+                    findAllArticle(1);
+                }else{
+                    alert("新增失败！");
+                }
+                id=null;
+            });
+        }
+    })
+
+    //新增文章
+    $("#addBtn").click(function(){
+        $('#article-title').val('');
+        $('#listOne').attr("checked",true)
+        $('#article-category').val('');
+        //清空富文本编辑器
+        editor.txt.html('');
+        $("#articleModal").modal('show');
+        //清空图片
+        $(".FraUpload_imglist").html('');
+        id = null;
+    });
+    //编辑文章
+    $(".table").on('click','.article-edit',function(){
+        id =  $(this).closest('tr').find('[type=checkbox]').val();
+        var editData = allData.data.records.filter(function(item){
+            return item.article.id == id;
+        })[0];
+        $('#article-title').val(editData.article.title);
+        $('input[value='+editData.article.lisstyle+']').attr("checked",true) ;
+        $('#article-category').val(editData.category?editData.category.id:'');
+        $('.w-e-text').html(editData.article.content);
+        $(".FraUpload_imglist").html('');
+        $("#articleModal").modal('show');
+        publishtime = editData.article.publishtime;
+        readtimes = editData.article.readtimes;
+    });
+
+    //删除
+    $(".table").on('click','.article-delete',function(){
+        var id =  $(this).closest('tr').find('[type=checkbox]').val();
+        jqxhr = myAjax("/manager/article/deleteById",'delete',{id:id},function(res){
+            if(res.status==2000){
+                alert("删除成功");
+            }else{
+                alert("删除失败");
+            }
+            findAllArticle(1);
+        });
+    });
+
+    //批量删除
+    $("#batchDelete").click(function(){
+        var ids = [];
+        Array.from($("input[type=checkbox]:checked")).forEach(function(item){
+            ids.push($(item).val());
+        });
+        if(ids.length>0){
+            var result = confirm("确定要删除吗？");
+            if(result){
+                jqxhr = myAjax("/manager/article/batchDelete","delete",{ids:ids.toString()},function(res){
+                    if(res.status==2000){
+                        alert("删除成功");
+                        findAllArticle(0);
+                    }else{
+                        alert("删除失败");
+                        $("input[type=checkbox]:checked").prop('checked',false);
+                    }
+                    
+                });
+            }
+        }else{
+                alert("请选择需要删除的数据！");
+        }
+    });
+</script>

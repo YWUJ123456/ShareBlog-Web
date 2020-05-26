@@ -1,0 +1,74 @@
+.user #myTab li{
+  list-style: none;
+}
+.nav-item a {
+  font-size: 16px;
+  text-decoration: none;
+}
+.list-group-item div{
+  display: inline-block;
+}
+#addAdminBtn{
+  margin: 10px 10px;
+}
+
+#myTabContent{
+  height: 440px;
+  width: 100%;
+  overflow: auto;
+}
+
+.card .list-group-item div:not(:first-child){
+  color: gray;
+}
+
+/* user 正常状态样式*/
+.card .list-group-item .user-status-normal{
+  display: flex;
+  border-radius:20px;
+  background-color:#13ce66;
+  padding-left: 5px;
+  width:55px;
+  height:20px;
+  line-height:20px;
+  font-size:12px;
+  color: black !important;
+  cursor: pointer;
+}
+.card .list-group-item .user-status-normal > div{
+  border-radius:100%;
+  height:20px;
+  width:20px;
+  display:inline-block;
+  background-color: white;
+  margin-left: 5px;
+}
+/* user 禁言状态样式 */
+.card .list-group-item .user-status-forbid{
+  display: flex;
+  border-radius:20px;
+  background-color:#cdcdcd;
+  padding-right: 5px;
+  width:55px;
+  height:20px;
+  line-height:20px;
+  font-size:12px;
+  color: black !important;
+  cursor: pointer;
+}
+.card .list-group-item .user-status-forbid > div{
+  border-radius:100%;
+  height:20px;
+  width:20px;
+  display:inline-block;
+  background-color: white;
+  margin-right: 5px;
+}
+.list-group-flush .list-group-item{
+  display: flex;
+}
+.list-group-flush .list-group-item div:not(:last-child){
+  margin-left: 10px;
+  margin-right: 10px;
+}
+

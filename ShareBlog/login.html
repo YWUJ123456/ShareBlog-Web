@@ -1,0 +1,94 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>ShareBlog登录</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="./css/login.css">
+<script src="https://cdn.bootcss.com/jquery/1.11.0/jquery.min.js"></script>
+<script>
+	$(function () {
+		$("input[type=password]").keydown(function(even) {
+			if(even.keyCode == 13){
+				//keyCode如果为13 表示用户按了回车
+				$(".submit").click();
+			}
+		});
+    $("input[type=text]").keydown(function(even) {
+        if(even.keyCode == 13){
+            if(!$("input[type=text]").val()){
+                alert("用户名不能为空");
+            }else {
+                $("input[type=password]").focus();
+            }
+        }
+    });
+
+		$(".submit").on("click", function() {
+			var username = $("input[type=text]").val();
+      var password = $("input[type=password]").val();
+      var roleId = $("option:checked").val();
+			if(username==''){
+				alert("用户名不能为空");
+			}else if(password==''){
+				alert("密码不能为空");
+			}else{
+				$.ajax({
+            url:'http://120.24.21.21:8081/manager/user/login',
+            method:'post',
+            data:{
+              username:username,
+              password:password,
+              roleId:roleId
+            },
+            success:function(res){
+                if(res.data){
+                    // 将token设置到浏览器中
+                    localStorage.setItem('token',res.data.token)
+                    var token = localStorage.getItem('token');
+                    if(token){
+                        location.href = "http://120.24.21.21/index"
+                    }
+                } else {
+                    alert(res.msg);
+                }
+            },
+            error:function(err){
+                console.log(err);
+            }
+        })
+			}
+		});
+	});
+</script>
+</head>
+<body>
+  <div class="back">
+    <div class="shadow-forms">
+      <div class="message warning">
+        <div class="login-head">
+          <h2>登录</h2>
+        </div>
+        <div class="sub-head"></div>
+        <form>
+          <input type="text" class="text" name="username" placeholder="请输入用户名">
+          <!--autocomplete="off"表示不自动提示之前输入框输入的内容-->
+          <input type="password" name="password" placeholder="请输入密码" autocomplete="off">
+          <select name="roleId">
+            <option value="1">管理员</option>
+            <option value="2">编辑</option>
+          </select>
+          <div class="p-container">
+            <div class="clear"></div>
+          </div>
+          <div class="submit">
+            <input type="button" value="登录">
+          </div>
+        </form>
+      </div>
+      <div class="clear"></div>
+    </div>
+  </div>
+</body>
+
+</html>

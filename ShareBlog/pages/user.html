@@ -1,0 +1,418 @@
+<div class="user">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="home-tab" data-toggle="tab" href="#admin" role="tab" aria-controls="home" aria-selected="true">管理员</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="profile-tab" data-toggle="tab" href="#editor" role="tab" aria-controls="profile" aria-selected="false">编辑</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="contact-tab" data-toggle="tab" href="#user" role="tab" aria-controls="contact" aria-selected="false">用户</a>
+        </li>
+    </ul>
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="admin" role="tabpanel" aria-labelledby="home-tab">
+            <button id="addAdminBtn" class="btn btn-primary">新增</button>
+            <div id="adminPage"></div>
+        </div>
+        <div class="tab-pane fade" id="editor" role="tabpanel" aria-labelledby="profile-tab" style="margin-top: 58px;">
+        </div>
+        <div class="tab-pane fade" id="user" role="tabpanel" aria-labelledby="contact-tab" style="margin-top: 58px;">
+        </div>
+    </div>
+
+
+    <!-- 管理员新增模态框 -->
+    <div class="modal fade" id="userModal" tabindex="-1" role="dialog" aria-labelledby="userModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalLabel">新增用户</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                      <label for="username">用户名</label>
+                      <input type="email" class="form-control" id="username" aria-describedby="emailHelp">
+                    </div>
+                    <div class="form-group">
+                        <label for="nickname">真实姓名</label>
+                        <input type="email" class="form-control" id="nickname" aria-describedby="emailHelp">
+                      </div>
+                    <div class="form-group">
+                        <label for="password">密码</label>
+                        <input type="password" class="form-control" id="password" aria-describedby="emailHelp">
+                    </div>
+                    <div class="form-group">
+                        <label for="passwordSure">确认密码</label>
+                        <input type="password" class="form-control" id="passwordSure" aria-describedby="emailHelp">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">邮箱</label>
+                        <input type="email" class="form-control" id="email" aria-describedby="emailHelp">
+                    </div>
+                    <div class="form-group">
+                      <label for="role">注册角色</label>
+                      <select name="" id="role" class="form-control">
+                          <option value="1">管理员</option>
+                          <option value="2">编辑</option>
+                          <option value="3">会员</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                        <label>头像</label>
+                        <!-- 保存的图片id 用于表单提交 -->
+                        <input type="hidden" id="imagepath" name="">
+                        <!-- 上传按钮 -->
+                        <span id="uploadImage" class="btn btn-primary">上传</span>
+                        <!-- 输出图片 -->
+                        <div class="showImage"></div> 
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveBtn">确定</button>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var allData = null;//保存所有数据
+    var fileUrl = 'http://120.24.21.21:8888/'; //文件服务器地址
+    findAllUser();
+    function findAllUser(){
+        $("#adminPage").empty();
+        $("#user").empty();
+        $("#editor").empty();
+        jqxhr= jqxhr = myAjax('/manager/user/findAllUser','get',{},function(res){
+            allData = res.data;
+            var admin = res.data.filter(function(item){
+                return item.roleId == 1;
+            });
+            admin.forEach(function(item){
+                var newDiv = $(`
+                    <div class="card" style="width: 24%;display:inline-block;margin-right:1%;margin-bottom:10px;">
+                        <img style="width:100%;height:185px;border-radius:100%;" src="`+(item.userface ? fileUrl+item.userface : '../images/2.jpg')+`" class="card-img-top" alt="...">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item" style="display:none;">
+                                <input type="text" value="`+item.id+`"> 
+                            </li>
+                            <li class="list-group-item">
+                                <div>用户名:</div>
+                                <div>`+item.username+`</div>
+                            </li>
+                            <li class="list-group-item">
+                                <div>真实姓名:</div>
+                                <div>`+item.nickname+`</div>
+                            </li>
+                            <li class="list-group-item">
+                                <div>邮箱:</div>
+                                <div>`+item.email+`</div>
+                            </li>
+                            <li class="list-group-item">
+                                <div>操作:</div>
+                                <div><i class="iconfont icon-shanchu admin-delete" title="删除"></i></div>
+                                <div><i class="iconfont icon-xiugai admin-edit" title="修改"></i></div>
+                            </li>
+                        </ul>
+                    </div> 
+                `)
+                $('#adminPage').append(newDiv)
+            })
+            var editor = res.data.filter(function(item){
+                return item.roleId == 2;
+            });
+            editor.forEach(function(item){
+                var newDiv = $(`
+                    <div class="card" style="width: 24%;display:inline-block;margin-right:1%;margin-bottom:10px;">
+                        <img style="width:100%;height:185px;border-radius:100%;" src="`+(item.userface ? fileUrl+item.userface : '../images/2.jpg')+`" class="card-img-top" alt="...">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item" style="display:none;">
+                                <input type="text" value="`+item.id+`"> 
+                            </li>
+                            <li class="list-group-item">
+                                <div>用户名:</div>
+                                <div>`+item.username+`</div>
+                            </li>
+                            <li class="list-group-item">
+                                <div>真实姓名:</div>
+                                <div>`+item.nickname+`</div>
+                            </li>
+                            <li class="list-group-item">
+                                <div>邮箱:</div>
+                                <div>`+item.email+`</div>
+                            </li>
+                            <li class="list-group-item">
+                                <div>操作:</div>
+                                <div><i class="iconfont icon-shanchu editor-delete" title="删除"></i></div>
+                                <div><i class="iconfont icon-xiugai editor-edit" title="修改"></i></div>
+                            </li>
+                        </ul>
+                    </div> 
+                `)
+                $('#editor').append(newDiv)
+            })
+
+            //用户
+            var user = res.data.filter(function(item){
+                return item.roleId == 3;
+            });
+            user.forEach(function(item){
+                var newDiv = $(`
+                    <div class="card" style="width: 24%;display:inline-block;margin-right:1%;margin-bottom:10px;">
+                        <img style="width:100%;height:185px;border-radius:100%;" src="`+(item.userface ? fileUrl+item.userface : '../images/2.jpg')+`" class="card-img-top" alt="...">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item" style="display:none;">
+                                <input type="text" value="`+item.id+`"> 
+                            </li>
+                            <li class="list-group-item">
+                                <div>用户名:</div>
+                                <div>`+item.username+`</div>
+                            </li>
+                            <li class="list-group-item">
+                                <div>真实姓名:</div>
+                                <div>`+item.nickname+`</div>
+                            </li>
+                            <li class="list-group-item">
+                                <div>邮箱:</div>
+                                <div>`+item.email+`</div>
+                            </li>
+                            <li class="list-group-item">
+                                <div>操作:</div>
+                               `+(item.enabled?"<div class='user-status-normal'>正常<div></div></div>":"<div class='user-status-forbid'><div></div>禁言</div>")+`
+                            </li>
+                        </ul>
+                    </div> 
+                `)
+                $('#user').append(newDiv)
+            })
+        });
+    }
+
+    //新增用户
+    $("#addAdminBtn").click(function(){
+        $("#username").val('');
+        $("#nickname").val('');
+        $("#password").val('');
+        $("#email").val('');
+        $("#role").val('');
+        $('#passwordSure').val('');
+        $(".showImage>.FraUpload_imglist").html('');
+        $("#userModal").modal('show');
+    });
+    // 判断两次输入的密码是否一致
+    $('#passwordSure').on('blur',function(){
+        var password = $('#password').val();
+        var passwordSure= $('#passwordSure').val();
+        if(password != passwordSure){
+            alert('请确保两次输入的密码一致!')
+        }
+    })
+    //判断格式
+    $("#password").on('blur',function(){
+        var password = $("#password").val();
+        if(password.length==0){
+            alert("密码为空，请输入密码！");
+        }else if(password.length<6){
+            alert("密码过于简单！");
+        }
+    })
+    $("#email").on('blur',function(){
+        var pattern = /^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/img;
+        var email = $("#email").val();
+        if(!pattern.test(email)){
+            alert("邮箱格式错误！");
+        }
+    });
+    //文件上传
+    var imgUrl; //文件路径
+    a = $("#uploadImage").FraUpload({
+        view        : ".showImage",      // 视图输出位置
+        url         : "http://120.24.21.21:8081/manager/file/upload", // 上传接口
+        fetch       : "img",   // 视图现在只支持img
+        debug       : false,    // 是否开启调试模式
+        /* 外部获得的回调接口 */
+        onLoad: function(e){                    // 选择文件的回调方法
+            console.log("外部: 初始化完成...");
+        },
+        breforePort: function (e) {         // 发送前触发
+            console.log("文件发送之前触发");
+        },  
+        successPort: function (e) {         // 发送成功触发
+            console.log("文件发送成功");
+            onload_image()
+        },
+        errorPort: function (e) {       // 发送失败触发
+            console.log("文件发送失败");
+            onload_image()
+        },
+        deletePost: function(e){    // 删除文件触发
+            console.log("删除文件");
+            console.log(e);
+            alert('删除了'+e.filename)
+            onload_image()
+        },
+        sort: function(e){      // 排序触发
+            console.log("排序");
+            onload_image()
+        }
+    });
+    // 获取图片上传信息
+    function onload_image(){
+        var res = a.FraUpload.show()
+        var ids = [];
+        for(let k in res){
+            this_val = res[k]
+            if(!empty(res[k]['is_upload']) && !empty(res[k]['ajax'])){
+                ajax_value = res[k]['ajax'];
+                ids.push(ajax_value.data.id)
+            }
+        }
+        $("#imagepath").val(ids);
+        imgUrl = res[0].ajax.data.id;
+    }
+    /**
+     * 判断变量是否为空
+     */
+    function empty(value) {
+        if(value=="" || value==undefined || value==null || value==false || value==[] || value=={}){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    var id = null;//保存id 用于判断是更新还是新增
+    // 保存
+    $('#saveBtn').click(function(){
+        if($('#password').val().length==0||$('#passwordSure').val().length==0){
+            alert("密码不能为空！");
+            return;
+        }
+        var obj =null;
+        if(id){
+            obj = {
+                id:id,
+                username:$('#username').val(),
+                nickname:$('#nickname').val(),
+                password:$('#password').val(),
+                email:$('#email').val(),
+                roleId:$('#role').val(),
+                enabled:true,
+                userface:imgUrl
+            }
+            jqxhr = myAjax('/manager/user/updateUser','put',obj,function(res){
+                if(res.status==2000){
+                    alert(res.msg);
+                    findAllUser();
+                }else{
+                    alert(res.msg);
+                }
+                id = null;
+                $("#userModal").modal('hide');
+            })
+        }else{
+            obj = {
+                username:$('#username').val(),
+                nickname:$('#nickname').val(),
+                password:$('#password').val(),
+                email:$('#email').val(),
+                roleId:$('#role').val(),
+                enabled:true,
+                userface:imgUrl
+            }
+            jqxhr = myAjax('/manager/user/saveUser','post',obj,function(res){
+                if(res.status==2000){
+                    alert(res.msg);
+                    findAllUser();
+                }else{
+                    alert(res.msg);
+                }
+                id = null;
+                $("#userModal").modal('hide');
+            })
+        }
+    })
+    //修改管理员
+    $("#admin").on('click','.admin-edit',function(){
+        id = $(this).closest('ul').find('input').val();
+        var editData = allData.filter(function(item){
+            return item.id==id;
+        })[0];
+        $("#username").val(editData.username);
+        $("#nickname").val(editData.nickname);
+        $("#password").val("");
+        $('#passwordSure').val("");
+        $("#email").val(editData.email);
+        $("#role").val(editData.roleId);
+        $(".showImage>.FraUpload_imglist").html('');
+        $("#userModal").modal('show');
+    });
+
+    //修改编辑
+    $("#editor").on('click','.editor-edit',function(){
+        id = $(this).closest('ul').find('input').val();
+        var editData = allData.filter(function(item){
+            return item.id==id;
+        })[0];
+        $("#username").val(editData.username);
+        $("#nickname").val(editData.nickname);
+        $("#password").val("");
+        $('#passwordSure').val("");
+        $("#email").val(editData.email);
+        $("#role").val(editData.roleId);
+        $(".showImage>.FraUpload_imglist").html('');
+        $("#userModal").modal('show');
+    });
+
+
+    //删除管理员
+    $("#admin").on('click','.admin-delete',function(){
+        var id = $(this).closest('ul').find('input').val();
+        jqxhr = myAjax('/manager/user/deleteUserById','delete',{id:id},function(res){
+            alert(res.msg);
+        });
+    });
+
+    //删除编辑
+    $("#editor").on('click','.editor-delete',function(){
+        var id = $(this).closest('ul').find('input').val();
+        jqxhr = myAjax('/manager/user/deleteUserById','delete',{id:id},function(res){
+            alert(res.msg);
+        });
+    });
+
+    //修改用户状态
+    //正常-->禁言
+    $("#user").on('click','.user-status-normal',function(){
+        var id = $(this).closest('ul').find('input').val();
+        jqxhr = myAjax('/manager/user/findUserById','get',{id:id},function(res){
+            var obj = {
+                id:id,
+                status:!res.data.enabled
+            }
+            jqxhr = myAjax('/manager/user/changeStatus','put',obj,function(res){
+                findAllUser();
+            })
+        })
+    });
+    //禁言-->正常
+    $("#user").on('click','.user-status-forbid',function(){
+        var id = $(this).closest('ul').find('input').val();
+        jqxhr = myAjax('/manager/user/findUserById','get',{id:id},function(res){
+            var obj = {
+                id:id,
+                status:!res.data.enabled
+            }
+            jqxhr = myAjax('/manager/user/changeStatus','put',obj,function(res){
+                findAllUser();
+            })
+        })
+    });
+</script>

@@ -1,0 +1,251 @@
+<div class="category">
+    <!-- 树形结构 -->
+    <div class="category-tree">
+        <!-- ztree树形结构 -->
+        <ul class="ztree" id="category-tree"></ul>
+    </div>
+    <!-- 表格内容 -->
+    <div class="category-content">
+        <div class="category-option">
+            <button id="addBtn" class="btn btn-primary">新增</button>
+            <button id="batchBtn" class="btn btn-danger">批量删除</button>
+        </div>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>编号</th>
+                    <th>栏目名称</th>
+                    <th>父栏目</th>
+                    <th>栏目描述</th>
+                    <th style="text-align: center;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal fade" id="categoryModal" tabindex="-1" role="dialog" aria-labelledby="categoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="categoryModalLabel">新增栏目</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                      <label for="category-name">栏目名称</label>
+                      <input type="email" class="form-control" id="category-name" aria-describedby="emailHelp">
+                    </div>
+                    <div class="form-group">
+                      <label for="category-parent">父栏目</label>
+                      <select name="" id="category-parent" class="form-control">
+                      </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="category-comment">栏目描述</label>
+                        <textarea name="" id="category-comment" cols="30" rows="10" class="form-control"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button id="saveBtn" type="button" class="btn btn-primary">保存</button>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var id = null;
+    var allData= null;
+    findAllCategory();
+    // 查询所有栏目，显示到表格
+    function findAllCategory(){
+        $('tbody').empty();
+        jqxhr = myAjax('/manager/category/findAllCategory','get',{},function(res){
+            allData = res;
+            res.data.forEach(function(item){
+                var newTr = $(`
+                    <tr>
+                        <td><input type="checkbox" value="`+item.category.id+`"></td>
+                        <td>`+item.category.name+`</td>
+                        <td>`+(item.parent ? item.parent.name : '--')+`</td>
+                        <td>`+item.category.comment+`</td>
+                        <td style="text-align:center;">
+                            <span><i class="iconfont icon-shanchu category-delete" title="删除"></i></span>
+                            <span><i class="iconfont icon-xiugai category-edit" title="修改"></i></span>
+                        </td>
+                    </tr>
+                `)
+                $('tbody').append(newTr);
+            });
+            // 2.将数据遍历到树形结构中去
+            // 过滤出父栏目id为空的，也就是父栏目
+            var parents = res.data.filter(function(item){
+                return !item.parent;
+            })
+            var categorys = [];
+            parents.forEach(function(item){
+                categorys.push(item.category);
+            });
+            // 过滤出父栏目id为当前id的栏目
+            categorys.forEach(function(item){
+                var children = [];
+                // item为每一个父栏目
+                var categoryChildren = res.data.filter(function(it){
+                    // it为所有栏目
+                    if(it.parent){
+                        return item.id == it.parent.id;
+                    }
+                })
+                if(categoryChildren){
+                    categoryChildren.forEach(function(item){
+                        children.push(item.category);
+                    })
+                }
+                item.children = children;
+            })
+            // 设置第一个默认展开
+            categorys[0].open = true;
+            // 渲染数据
+            $.fn.zTree.init($("#category-tree"), {view:{showIcon: false}}, categorys);
+
+            //数据遍历到新增栏目的父栏目
+            res.data.forEach(function(item){
+                var newOption = $(` <option value="`+item.category.id+`">`+item.category.name+`</option>`);
+                $('#category-parent').append(newOption);
+            })
+        })
+    }
+    
+    //树形结构 根据栏目名称显示栏目
+    $("#category-tree").on('click','.node_name',function(){
+        var name = $(this).text();
+        var categoryData = allData.data.filter(function(item){
+            if(item.category){
+                return item.category.name == name;
+            }
+        });
+        $('tbody').empty();
+        categoryData.forEach(function(item){
+                var newTr = $(`
+                    <tr>
+                        <td><input type="checkbox" value="`+item.category.id+`"></td>
+                        <td>`+item.category.name+`</td>
+                        <td>`+(item.parent ? item.parent.name : '--')+`</td>
+                        <td>`+item.category.comment+`</td>
+                        <td style="text-align:center;">
+                            <span><i class="iconfont icon-shanchu category-delete" title="删除"></i></span>
+                            <span><i class="iconfont icon-xiugai category-edit" title="修改"></i></span>
+                        </td>
+                    </tr>
+                `)
+                $('tbody').append(newTr);
+        });
+    });
+
+    //新增按钮
+    $("#addBtn").click(function(){
+        $('#category-name').val('');
+        $('#categoryModal').modal('show');
+        $("#categoryModalLabel").text("新增栏目");
+    })
+    //保存
+    $("#saveBtn").click(function(){
+        var name = $("#category-name").val();
+        var parentId = $("#category-parent").val();
+        var comment = $("#category-comment").val();
+        if(name && comment){
+            if(id){
+                var obj = {
+                    id:id,
+                    name:name,
+                    parentId:parentId,
+                    comment:comment,
+                    no:null
+                }
+                jqxhr = myAjax("/manager/category/updateCategory","put",obj,function(res){
+                    alert(res.msg);
+                    $("#categoryModal").modal('hide');
+                    id = null;
+                    findAllCategory();
+                });
+            }else{
+                var obj = {
+                name:name,
+                parentId:parentId,
+                comment:comment,
+                no:null
+                }
+                jqxhr = myAjax("/manager/category/saveCategory","post",obj,function(res){
+                if(res.status==2000){
+                    alert(res.msg);
+                    findAllCategory();
+                }else{
+                    alert("新增失败！");
+                }
+                $("#categoryModal").modal('hide');
+                id = null;          
+            });
+            }
+        }
+    });
+
+    //编辑栏目
+    $('.table').on('click','.category-edit',function(){
+        id = $(this).closest('tr').find('[type=checkbox]').val();
+        var editData = allData.data.filter(function(item){
+            return item.category.id==id;
+        })[0];
+        $("#categoryModalLabel").text("修改栏目");
+        $("#category-name").val(editData.category.name);
+        $("#category-comment").val(editData.category.comment);
+        $("#category-parent").val(editData.parent?editData.parent.id:'');
+        $('#categoryModal').modal('show');
+    })
+
+    
+    $('.table').on('click','.category-delete',function(){
+        var deleteId = $(this).closest('tr').find('[type=checkbox]').val();
+        var result = confirm("是否确认删除？");
+        if(result){
+            jqxhr = myAjax('/manager/category/deleteCategoryById','delete',{id:deleteId},function(res){
+                if(res.status==2000){
+                    alert(res.msg);
+                    findAllCategory();
+                }else{
+                    alert("删除失败");
+                }
+        });
+        }
+    })
+    //批量删除
+    $("#batchBtn").click(function(){
+        var arr = [];
+        Array.from($("input[type=checkbox]:checked")).forEach(function(item){
+            arr.push($(item).val());
+        })
+        if(arr.length>0){
+            var result = confirm("是否确定批量删除？");
+            if(result){
+                jqxhr = myAjax("/manager/category/batchDeleteCategory","post",{ids:arr.toString()},function(res){
+                    if(res.status==200){
+                        alert("删除成功");
+                        findAllCategory();
+                    }else{
+                        alert("删除失败");
+                        $(":checkbox:checked").prop("checked",false);
+                    }
+                });
+            }
+        }else{
+            alert("请勾选需要删除的数据！");
+        }
+    })
+</script>

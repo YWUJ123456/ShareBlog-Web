@@ -1,0 +1,43 @@
+.article-option .btn-left button{
+  margin-bottom: 10px;
+  margin-right: 10px;
+  margin-left: 10px;
+}
+#articlePage{
+  margin: 10px auto;
+  text-align: center;
+}
+.article-option .btn-left{
+  float: left;
+  width: 30%;
+}
+.article-option .btn-right{
+  float: right;
+  width: 70%;
+}
+.article-option .btn-right *{
+  display: inline-block;
+}
+.article-option .btn-right input{
+  width: 150px;
+}
+#keyWords{
+  width: 150px;
+  margin: 0 10px;
+}
+.passBtn{
+  background-color: gainsboro;
+  border-radius: 5px;
+  height: 25px;
+  width: 50px;
+  line-height: 25px;
+}
+
+.articleImg{
+  height:30px;
+  width:30px;
+}
+
+li{
+  list-style: none;
+}

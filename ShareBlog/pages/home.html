@@ -1,0 +1,166 @@
+<div  style="display: flex;">
+    <div id="article" style="width: 500px;height:400px;"></div>
+    <div id="user" style="width: 500px;height:400px;"></div>
+</div>
+<script type="text/javascript">
+
+    // 基于准备好的dom，初始化echarts实例
+    var myChartArticle = echarts.init(document.getElementById('article'));
+    var myChartUser = echarts.init(document.getElementById('user'));
+
+    var title = [];
+    var readtimes = [];
+    var thumbup = [];
+    var thumbdown = [];
+    // 查询所有文章
+    findAllArticle();
+    function findAllArticle(){
+        jqxhr = myAjax('/manager/article/findArticleByCondition','get',{page:1,pageSize:10},function(res){
+            res.data.records.forEach(function(item){
+                title.push(item.article.title);
+                readtimes.push(item.article.readtimes)
+                thumbup.push(item.article.thumbup)
+                thumbdown.push(item.article.thumbdown)
+            })
+        })
+    }
+
+    setTimeout(function(){
+        // 指定图表的配置项和数据
+        var option = {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {            // 坐标轴指示器，坐标轴触发有效
+                    type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+                }
+            },
+            legend: {
+                data: ['阅读次数', '点赞次数', '鄙视次数']
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: [
+                {
+                    type: 'value'
+                }
+            ],
+            yAxis: [
+                {
+                    type: 'category',
+                    axisTick: {
+                        show: false
+                    },
+                    data: title
+                }
+            ],
+            series: [
+                {
+                    name: '阅读次数',
+                    type: 'bar',
+                    label: {
+                        show: true,
+                        position: 'inside'
+                    },
+                    data: readtimes
+                },
+                {
+                    name: '点赞次数',
+                    type: 'bar',
+                    stack: '总量',
+                    label: {
+                        show: true
+                    },
+                    data: thumbup
+                },
+                {
+                    name: '鄙视次数',
+                    type: 'bar',
+                    stack: '总量',
+                    label: {
+                        show: true,
+                        position: 'left'
+                    },
+                    data: thumbdown
+                }
+            ]
+        };
+        // 使用刚指定的配置项和数据显示图表。
+        myChartArticle.setOption(option);
+    },1000);
+
+    var users = ["管理员","编辑","正常用户","禁言用户"];
+    var num = [];
+    findAllUser();
+    function findAllUser(){
+        jqxhr = myAjax('/manager/user/findAllUser','get',{},function(res){
+            var admin = res.data.filter(function(item){
+                return item.roleId == "1";
+            });
+            var editor = res.data.filter(function(item){
+                return item.roleId == "2";
+            });
+            var normalUser = res.data.filter(function(item){
+                return item.roleId == "3"&&item.enabled;
+            });
+            var forbidUser = res.data.filter(function(item){
+                return item.roleId == '3'&&!item.enabled;
+            });
+            num.push(admin.length);
+            num.push(editor.length);
+            num.push(normalUser.length);
+            num.push(forbidUser.length);
+        })
+    }
+    setTimeout(function(){
+        // 指定图表的配置项和数据
+        var option = {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {            // 坐标轴指示器，坐标轴触发有效
+                    type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+                }
+            },
+            legend: {
+                data: ['数目']
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: [
+                {
+                    type: 'value'
+                }
+            ],
+            yAxis: [
+                {
+                    type: 'category',
+                    axisTick: {
+                        show: false
+                    },
+                    data: users
+                }
+            ],
+            series: [
+                {
+                    name: '数目',
+                    type: 'bar',
+                    label: {
+                        show: true,
+                        position: 'inside'
+                    },
+                    data: num
+                }
+            ]
+        };
+        // 使用刚指定的配置项和数据显示图表。
+        myChartUser.setOption(option);
+    },500);
+    
+</script>

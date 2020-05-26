@@ -1,0 +1,174 @@
+<div class="comment">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="home-tab" data-toggle="tab" href="#comment-set" role="tab" aria-controls="home" aria-selected="true">评论设置</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="profile-tab" data-toggle="tab" href="#comment-list" role="tab" aria-controls="profile" aria-selected="false">评论列表</a>
+        </li>
+    </ul>
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="comment-set" role="tabpanel" aria-labelledby="home-tab">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>编号</th>
+                        <th>文章标题</th>
+                        <th>所属栏目</th>
+                        <th>作者</th>
+                        <th>发布时间</th>
+                        <th>阅读次数</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="setTable">
+                    
+                </tbody>
+            </table>
+            <!-- 分页 -->
+            <div id="commentPage"></div>
+        </div>
+        <div class="tab-pane fade" id="comment-list" role="tabpanel" aria-labelledby="profile-tab">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>编号</th>
+                        <th>所属文章</th>
+                        <th>评论内容</th>
+                        <th>评论者</th>
+                        <th>评论时间</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="commentList">
+                    
+                </tbody>
+            </table>
+            <!-- 分页 -->
+            <div id="commentListPage"></div>
+        </div>
+    </div>
+</div>
+<script>
+    //评论设置
+    findAllComment(1);
+    function findAllComment(page){
+        jqxhr = myAjax('/manager/comment/findCommentByCondition','get',{page:page,pageSize:7},function(res){
+            $('#setTable').empty();
+            var newData = [];
+            res.data.records.forEach(function(item){
+                if(item.article){
+                   jqxhr = myAjax('/manager/category/findCategoryById','get',{id:item.article.categoryId},function(data){
+                        item.categoryName = data.data.category.name;
+                   });
+                }
+                newData.push(item)
+            })
+            // newData为新增了栏目名称的新数据
+            newData.forEach(function(item){
+                // 由于categoryName在新增到新数组中需要时间，所以需要使用定时器
+                setTimeout(function(){
+                    var newTr = $(`
+                        <tr>
+                            <td><input type="checkbox" value="`+item.comment.id+`"></td>
+                            <td>`+(item.article ? item.article.title : '--')+`</td>
+                            <td>`+(item.categoryName ? item.categoryName : '--')+`</td>
+                            <td>`+(item.user ? item.user.nickname : '--')+`</td>
+                            <td>`+(item.article ? item.article.publishtime : '--')+`</td>
+                            <td>`+(item.article ? item.article.readtimes : '--')+`</td>
+                            <td>`+(item.comment.status=="未审核"?"<button class='checkBtn '>审核</button>":item.comment.status)+`</td>
+                        </tr>
+                    `)
+                    $('#setTable').append(newTr)
+                },200)
+            })
+            // 分页数据
+            $("#commentPage").sPage({
+                page:res.data.current,
+                pageSize:res.data.size,
+                total:res.data.total,
+                prevPage:"←",
+                nextPage:"→",
+                backFun:function(page){
+                    // page为当前点击的页码
+                    findAllComment(page)
+                }
+            });
+        })
+    }
+
+    //评论列表
+    findAllCommentList(1);
+    function findAllCommentList(page){
+        jqxhr = myAjax('/manager/comment/findCommentByCondition','get',{page:page,pageSize:7},function(res){
+            $('#commentList').empty();
+            res.data.records.forEach(function(item){
+                var newTr = $(`
+                    <tr>
+                        <td><input type="checkbox" value="`+item.comment.id+`"></td>
+                        <td>`+(item.article ? item.article.title : '')+`</td>
+                        <td>`+(item.comment.content ? item.comment.content : '')+`</td>
+                        <td>`+(item.user ? item.user.nickname : '')+`</td>
+                        <td>`+(item.comment.commenttime ? item.comment.commenttime : '')+`</td>
+                        <td>`+(item.comment.status=="未审核"?"<button class='passBtnList '>审核</button>":item.comment.status)+`</td>
+                        <td>
+                            <span><i class="iconfont icon-shanchu comment-delete" title="删除"></i></span>
+                        </td>
+                    </tr>
+                `);
+                $('#commentList').append(newTr);
+            })
+            // 分页数据
+            $("#commentListPage").sPage({
+                page:res.data.current,
+                pageSize:res.data.size,
+                total:res.data.total,
+                prevPage:"←",
+                nextPage:"→",
+                backFun:function(page){
+                    findAllCommentList(page)
+                }
+            });
+        })
+    }
+
+    //评论审核
+    $(".table").on('click','.checkBtn',function(){
+        var id = $(this).closest('tr').find('input').val();
+        jqxhr = myAjax('/manager/comment/checkComment','put',{id:id},function(res){
+            if(res.status==2000){
+                alert("审核成功！");
+                findAllComment(1);
+            }else{
+                alert("审核失败！");
+            }
+        });
+    });
+
+    $(".table").on('click','.passBtnList',function(){
+        var id = $(this).closest('tr').find('input').val();
+        jqxhr = myAjax('/manager/comment/checkComment','put',{id:id},function(res){
+            if(res.status==2000){
+                alert("审核成功！");
+                findAllCommentList(1);
+            }else{
+                alert("审核失败！");
+            }
+        });
+    });
+    //删除评论
+    $(".table").on('click','.comment-delete',function(){
+        var id = $(this).closest('tr').find('input').val();
+        jqxhr = myAjax('/manager/comment/deleteCommentById','delete',{id:id},function(res){
+            if(res.status==2000){
+                alert("删除成功！");
+                findAllCommentList(1);
+                findAllComment(1);
+            }else{
+                alert("删除失败！");
+            }
+        });
+    });
+    
+</script>
